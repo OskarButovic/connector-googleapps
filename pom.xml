@@ -118,6 +118,12 @@
             <artifactId>google-oauth-client-java6</artifactId>
             <version>1.22.0</version>
         </dependency>
+        
+        <dependency>
+            <groupId>com.google.apis</groupId>
+            <artifactId>google-api-services-groupssettings</artifactId>
+            <version>v1-rev62-1.22.0</version>
+        </dependency>
 
         <dependency>
             <groupId>com.google.guava</groupId>
