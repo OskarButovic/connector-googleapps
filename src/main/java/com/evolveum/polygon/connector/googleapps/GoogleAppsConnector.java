@@ -62,6 +62,7 @@ import static com.evolveum.polygon.connector.googleapps.GroupHandler.*;
 import static com.evolveum.polygon.connector.googleapps.LicenseAssignmentsHandler.*;
 import static com.evolveum.polygon.connector.googleapps.OrgunitsHandler.*;
 import static com.evolveum.polygon.connector.googleapps.UserHandler.*;
+import com.evolveum.polygon.connector.googleapps.model.SchemaField;
 
 /**
  * Main implementation of the GoogleApps Connector.
@@ -510,7 +511,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
         if (null == schema) {
             final SchemaBuilder builder = new SchemaBuilder(GoogleAppsConnector.class);
 
-            ObjectClassInfo user = getUserClassInfo();
+            ObjectClassInfo user = getUserClassInfo(this);
             builder.defineObjectClass(user);
 
             ObjectClassInfo group = getGroupClassInfo();
@@ -992,6 +993,45 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
 
         } catch (IOException e) {
             logger.warn(e, "Failed to initialize Groups#List");
+            throw ConnectorException.wrap(e);
+        }
+    }
+    
+    public List<SchemaField> executeGetSchema() {
+        try {
+            final List<SchemaField> result = new ArrayList<SchemaField>();
+            
+            //TODO customer id do konfigurace
+            Directory.Schemas.List request = configuration.getDirectory().schemas().list(configuration.getCustomerId());
+
+            execute(request,
+                    new RequestResultHandler<Directory.Schemas.List, Schemas, Boolean>() {
+                        public Boolean handleResult(final Directory.Schemas.List request, Schemas schemas) {
+                            //TODO rozparsovat
+                            for(com.google.api.services.admin.directory.model.Schema schemaGa : schemas.getSchemas()){
+                                //TODO ziskat schema name a pouzivat jako prefix
+                                String schemaName = schemaGa.getSchemaName();
+                                for(SchemaFieldSpec field : schemaGa.getFields()){
+                                    SchemaField resultField = new SchemaField();
+                                    resultField.setFieldName(field.getFieldName());
+                                    resultField.setFieldType(field.getFieldType());
+                                    resultField.setMultivalued(field.getMultiValued());
+                                    resultField.setSchemaName(schemaName);
+                                    result.add(resultField);
+                                }
+                            }
+                            return true;
+                        }
+
+                        public Boolean handleNotFound(IOException e) {
+                            // Do nothing if not found
+                            return true;
+                        }
+                    });
+            
+            return result;
+        } catch (IOException e) {
+            logger.warn(e, "Failed to initialize Groups#Get");
             throw ConnectorException.wrap(e);
         }
     }

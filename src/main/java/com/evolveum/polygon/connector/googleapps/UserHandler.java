@@ -25,6 +25,7 @@ package com.evolveum.polygon.connector.googleapps;
 
 import static com.evolveum.polygon.connector.googleapps.GoogleAppsConnector.ID_ATTR;
 import static com.evolveum.polygon.connector.googleapps.GoogleAppsConnector.PHOTO_ATTR;
+import com.evolveum.polygon.connector.googleapps.model.SchemaField;
 
 import java.io.IOException;
 import java.util.Map;
@@ -69,6 +70,7 @@ import com.google.api.services.admin.directory.model.UserPhoto;
 import com.google.common.base.CharMatcher;
 import com.google.common.escape.Escaper;
 import com.google.common.escape.Escapers;
+import java.util.List;
 import org.identityconnectors.framework.common.objects.Uid;
 
 /**
@@ -327,7 +329,7 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
     // USER https://developers.google.com/admin-sdk/directory/v1/reference/users
     //
     // /////////////
-    public static ObjectClassInfo getUserClassInfo() {
+    public static ObjectClassInfo getUserClassInfo(GoogleAppsConnector connector) {
         // @formatter:off
             /*
          {
@@ -516,6 +518,12 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
 
         builder.addAttributeInfo(PredefinedAttributeInfos.GROUPS);
 
+        List<SchemaField> customFields = connector.executeGetSchema();
+        for(SchemaField field : customFields){
+            String fullFieldName = field.getSchemaName() + "/" + field.getFieldName();
+            builder.addAttributeInfo(AttributeInfoBuilder.define(fullFieldName).setMultiValued(field.isMultivalued()).build());
+        }
+        
         return builder.build();
     }
 

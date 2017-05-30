@@ -74,6 +74,10 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
     private Long maxCacheTTL = 300000L;
     private Long ignoreCacheAfterUpdateTTL = 5000L;
     private Boolean allowCache;
+    /**
+     * customer Id for schema retrieval
+     */
+    private String customerId;
 
     /**
      * Constructor.
@@ -189,6 +193,17 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
 
     public void setIgnoreCacheAfterUpdateTTL(Long ignoreCacheAfterUpdateTTL) {
         this.ignoreCacheAfterUpdateTTL = ignoreCacheAfterUpdateTTL;
+    }
+    
+    @ConfigurationProperty(order = 11, displayMessageKey = "customerId.display",
+    groupMessageKey = "basic.group", helpMessageKey = "customerId.help", required = true,
+    confidential = false)
+    public String getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
     }
 
 
