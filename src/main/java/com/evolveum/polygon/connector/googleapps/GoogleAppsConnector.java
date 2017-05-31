@@ -137,6 +137,8 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
     public static final String TYPE_ATTR = "type";
     public static final String PRODUCT_ID_SKU_ID_USER_ID = "productId,skuId,userId";
     public static final String PHOTO_ATTR = "__PHOTO__";
+    public static final String CUSTOM_SCHEMA_DELIMITER = "-CUSTOM-";
+    
     /**
      * Place holder for the {@link Configuration} passed into the init() method
      * {@link GoogleAppsConnector#init(org.identityconnectors.framework.spi.Configuration)}
@@ -1049,6 +1051,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
             Directory.Users.Get request
                     = configuration.getDirectory().users().get(uid.getUidValue());
             request.setFields(getFields(options, ID_ATTR, ETAG_ATTR, PRIMARY_EMAIL_ATTR));
+            request.setProjection("full");
 
             execute(request,
                     new RequestResultHandler<Directory.Users.Get, User, Boolean>() {
@@ -1075,6 +1078,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
     private void executeAccountSearchQuery(Filter query, final ResultsHandler handler, OperationOptions options, final Set<String> attributesToGet) {
         try {
             Directory.Users.List request = configuration.getDirectory().users().list();
+            request.setProjection("full");
             if (null != query) {
                 StringBuilder queryBuilder = query.accept(new UserHandler(), request);
                 if (null != queryBuilder) {
@@ -1826,6 +1830,21 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
             builder.addAttribute(AttributeBuilder.build(PredefinedAttributes.GROUPS_NAME,
                     listGroups(service, user.getId())));
         }
+        
+        if(user != null && user.getCustomSchemas() != null && !user.getCustomSchemas().isEmpty()){
+            Set<String> schemaNames = user.getCustomSchemas().keySet();
+            for(String schemaName : schemaNames){
+                Map<String, Object> fields = user.getCustomSchemas().get(schemaName);
+                for(String fieldName : fields.keySet()){
+                    String fullFieldName = schemaName + CUSTOM_SCHEMA_DELIMITER + fieldName;
+                    if(null == attributesToGet || attributesToGet.contains(fullFieldName)){
+                        builder.addAttribute(
+                            AttributeBuilder.build(fullFieldName, null != fields.get(fieldName) ? fields.get(fieldName).toString() : null));
+                    }
+                }
+            }
+        }
+        
 
         return builder.build();
     }

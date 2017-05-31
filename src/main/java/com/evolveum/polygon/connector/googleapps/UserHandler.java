@@ -520,7 +520,7 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
 
         List<SchemaField> customFields = connector.executeGetSchema();
         for(SchemaField field : customFields){
-            String fullFieldName = field.getSchemaName() + "/" + field.getFieldName();
+            String fullFieldName = field.getSchemaName() + GoogleAppsConnector.CUSTOM_SCHEMA_DELIMITER + field.getFieldName();
             builder.addAttributeInfo(AttributeInfoBuilder.define(fullFieldName).setMultiValued(field.isMultivalued()).build());
         }
         
@@ -744,6 +744,12 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
                 content.setIncludeInGlobalAddressList(booleanValue);
             }
         }
+        
+        //TODO projit atributy s custom schema delimiterem
+        for(String attributeName : attributes.listAttributeNames()){
+            //TODO dodelat
+        }
+        content.setCustomSchemas(map);
 
         if (null == content) {
             return null;
