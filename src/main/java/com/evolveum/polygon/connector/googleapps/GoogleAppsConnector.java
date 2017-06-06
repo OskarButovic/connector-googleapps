@@ -137,7 +137,6 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
     public static final String TYPE_ATTR = "type";
     public static final String PRODUCT_ID_SKU_ID_USER_ID = "productId,skuId,userId";
     public static final String PHOTO_ATTR = "__PHOTO__";
-    public static final String CUSTOM_SCHEMA_DELIMITER = "-CUSTOM-";
     
     /**
      * Place holder for the {@link Configuration} passed into the init() method
@@ -194,7 +193,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
         if (ObjectClass.ACCOUNT.equals(objectClass)) {
 
             Uid uid
-                    = execute(createUser(configuration.getDirectory().users(), accessor),
+                    = execute(createUser(configuration.getDirectory().users(), accessor, configuration),
                     new RequestResultHandler<Directory.Users.Insert, User, Uid>() {
                         public Uid handleResult(final Directory.Users.Insert request,
                                                 final User value) {
@@ -1336,7 +1335,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
 
             final Directory.Users.Patch patch
                     = updateUser(configuration.getDirectory().users(), uid,
-                    attributesAccessor);
+                    attributesAccessor, configuration);
             if (null != patch) {
                 uidAfterUpdate
                         = execute(patch,
@@ -1836,7 +1835,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
             for(String schemaName : schemaNames){
                 Map<String, Object> fields = user.getCustomSchemas().get(schemaName);
                 for(String fieldName : fields.keySet()){
-                    String fullFieldName = schemaName + CUSTOM_SCHEMA_DELIMITER + fieldName;
+                    String fullFieldName = schemaName + configuration.getCustomFieldDelimiter() + fieldName;
                     if(null == attributesToGet || attributesToGet.contains(fullFieldName)){
                         builder.addAttribute(
                             AttributeBuilder.build(fullFieldName, null != fields.get(fieldName) ? fields.get(fieldName).toString() : null));

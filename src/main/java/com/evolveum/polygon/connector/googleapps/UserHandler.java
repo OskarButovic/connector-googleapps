@@ -26,6 +26,7 @@ package com.evolveum.polygon.connector.googleapps;
 import static com.evolveum.polygon.connector.googleapps.GoogleAppsConnector.ID_ATTR;
 import static com.evolveum.polygon.connector.googleapps.GoogleAppsConnector.PHOTO_ATTR;
 import com.evolveum.polygon.connector.googleapps.model.SchemaField;
+import com.google.api.client.util.ArrayMap;
 
 import java.io.IOException;
 import java.util.Map;
@@ -70,6 +71,7 @@ import com.google.api.services.admin.directory.model.UserPhoto;
 import com.google.common.base.CharMatcher;
 import com.google.common.escape.Escaper;
 import com.google.common.escape.Escapers;
+import java.util.HashMap;
 import java.util.List;
 import org.identityconnectors.framework.common.objects.Uid;
 
@@ -520,7 +522,7 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
 
         List<SchemaField> customFields = connector.executeGetSchema();
         for(SchemaField field : customFields){
-            String fullFieldName = field.getSchemaName() + GoogleAppsConnector.CUSTOM_SCHEMA_DELIMITER + field.getFieldName();
+            String fullFieldName = field.getSchemaName() + ((GoogleAppsConfiguration)connector.getConfiguration()).getCustomFieldDelimiter() + field.getFieldName();
             builder.addAttributeInfo(AttributeInfoBuilder.define(fullFieldName).setMultiValued(field.isMultivalued()).build());
         }
         
@@ -529,7 +531,7 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
 
     // https://support.google.com/a/answer/33386
     public static Directory.Users.Insert createUser(Directory.Users users,
-            AttributesAccessor attributes) {
+            AttributesAccessor attributes, GoogleAppsConfiguration configuration) {
         User user = new User();
         user.setPrimaryEmail(GoogleAppsUtil.getName(attributes.getName()));
         GuardedString password = attributes.getPassword();
@@ -576,6 +578,38 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
         user.setOrgUnitPath(attributes.findString(ORG_UNIT_PATH_ATTR));
         user.setIncludeInGlobalAddressList(attributes
                 .findBoolean(INCLUDE_IN_GLOBAL_ADDRESS_LIST_ATTR));
+        
+        Map<String, Map<String, Object>> customSchemasAttributeValues = null;
+        //projit atributy s custom schema delimiterem
+        for(String attributeName : attributes.listAttributeNames()){
+            //atribut ma ve jmene oddelovac pro custom fieldy
+            if(attributeName != null && attributeName.contains(configuration.getCustomFieldDelimiter())){
+                //TODO dalsi validace nazvu
+                String[] attrNameArr = attributeName.split(configuration.getCustomFieldDelimiter());
+                if(attrNameArr.length != 2){
+                    throw new RuntimeException("attribute named: " + attributeName + " custom attributes must be named by customSchemaName + " + configuration.getCustomFieldDelimiter() + " + customAttributeName");
+                }
+                String customAttributeName = attrNameArr[1];
+                String customSchemaName = attrNameArr[0];
+                if(customSchemasAttributeValues == null){
+                    customSchemasAttributeValues = new ArrayMap<String, Map<String, Object>>();
+                }
+                Map<String, Object> currentSchema = customSchemasAttributeValues.get(customSchemaName);
+                if(currentSchema == null){
+                    currentSchema = new ArrayMap<String, Object>();
+                    customSchemasAttributeValues.put(customSchemaName, currentSchema);
+                }
+                //TODO kontrola duplicity attributu
+                //TODO cyklus pro multivalue attributy
+                currentSchema.put(customAttributeName, attributes.find(attributeName).getValue().get(0));
+            }
+        }
+        if(customSchemasAttributeValues != null){
+            if (null == user) {
+                user = new User();
+            }
+            user.setCustomSchemas(customSchemasAttributeValues);
+        }
 
         try {
             return users.insert(user).setFields(ID_ETAG);
@@ -587,7 +621,7 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
     }
 
     public static Directory.Users.Patch updateUser(Directory.Users users, Uid uid,
-            AttributesAccessor attributes) {
+            AttributesAccessor attributes, GoogleAppsConfiguration configuration) {
         User content = null;
 
         Name email = attributes.getName();
@@ -745,11 +779,37 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
             }
         }
         
-        //TODO projit atributy s custom schema delimiterem
+        Map<String, Map<String, Object>> customSchemasAttributeValues = null;
+        //projit atributy s custom schema delimiterem
         for(String attributeName : attributes.listAttributeNames()){
-            //TODO dodelat
+            //atribut ma ve jmene oddelovac pro custom fieldy
+            if(attributeName != null && attributeName.contains(configuration.getCustomFieldDelimiter())){
+                //TODO dalsi validace nazvu
+                String[] attrNameArr = attributeName.split(configuration.getCustomFieldDelimiter());
+                if(attrNameArr.length != 2){
+                    throw new RuntimeException("attribute named: " + attributeName + " custom attributes must be named by customSchemaName + " + configuration.getCustomFieldDelimiter() + " + customAttributeName");
+                }
+                String customAttributeName = attrNameArr[1];
+                String customSchemaName = attrNameArr[0];
+                if(customSchemasAttributeValues == null){
+                    customSchemasAttributeValues = new ArrayMap<String, Map<String, Object>>();
+                }
+                Map<String, Object> currentSchema = customSchemasAttributeValues.get(customSchemaName);
+                if(currentSchema == null){
+                    currentSchema = new ArrayMap<String, Object>();
+                    customSchemasAttributeValues.put(customSchemaName, currentSchema);
+                }
+                //TODO kontrola duplicity attributu
+                //TODO cyklus pro multivalue attributy
+                currentSchema.put(customAttributeName, attributes.find(attributeName).getValue().get(0));
+            }
         }
-        content.setCustomSchemas(map);
+        if(customSchemasAttributeValues != null){
+            if (null == content) {
+                content = new User();
+            }
+            content.setCustomSchemas(customSchemasAttributeValues);
+        }
 
         if (null == content) {
             return null;

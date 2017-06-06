@@ -78,6 +78,7 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
      * customer Id for schema retrieval
      */
     private String customerId;
+    private String customFieldDelimiter;
 
     /**
      * Constructor.
@@ -204,6 +205,17 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
 
     public void setCustomerId(String customerId) {
         this.customerId = customerId;
+    }
+    
+    @ConfigurationProperty(order = 11, displayMessageKey = "customFieldDelimiter.display",
+    groupMessageKey = "basic.group", helpMessageKey = "customFieldDelimiter.help", required = true,
+    confidential = false)
+    public String getCustomFieldDelimiter() {
+        return customFieldDelimiter;
+    }
+
+    public void setCustomFieldDelimiter(String customFieldDelimiter) {
+        this.customFieldDelimiter = customFieldDelimiter;
     }
 
 
