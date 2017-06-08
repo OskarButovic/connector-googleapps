@@ -43,6 +43,7 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.admin.directory.Directory;
+import com.google.api.services.groupssettings.Groupssettings;
 import com.google.api.services.licensing.Licensing;
 import java.io.IOException;
 import org.identityconnectors.common.logging.Log;
@@ -276,6 +277,9 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
                     licensing =
                             new Licensing.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
                             .setApplicationName("GoogleAppsConnector").build();
+                    groupsSettings =
+                            new Groupssettings.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
+                            .setApplicationName("GoogleAppsConnector").build();
 
                 }
             }
@@ -299,6 +303,11 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
         getGoogleCredential();
         return directory;
     }
+    
+    public Groupssettings getGroupSettings() {
+        getGoogleCredential();
+        return groupsSettings;
+    }
 
     public Licensing getLicensing() {
         getGoogleCredential();
@@ -308,6 +317,7 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
         return licensing;
     }
     private Directory directory;
+    private Groupssettings groupsSettings;
     private Licensing licensing;
 
     static {

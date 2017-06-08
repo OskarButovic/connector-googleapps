@@ -221,6 +221,36 @@ public class GroupHandler implements FilterVisitor<Void, Directory.Groups.List> 
         // Virtual Attribute
         builder.addAttributeInfo(AttributeInfoBuilder.define(MEMBERS_ATTR).setMultiValued(true)
                 .setReturnedByDefault(false).build());
+        
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_allowExternalMembers).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_allowGoogleCommunication).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_allowWebPosting).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_archiveOnly).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_customFooterText).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_customReplyTo).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_defaultMessageDenyNotificationText).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_description).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_email).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_includeCustomFooter).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_includeInGlobalAddressList).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_isArchived).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_maxMessageBytes).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_membersCanPostAsTheGroup).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_messageDisplayFont).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_messageModerationLevel).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_name).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_replyTo).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_sendMessageDenyNotification).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_showInGroupDirectory).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_spamModerationLevel).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanAdd).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanContactOwner).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanInvite).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanJoin).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanLeaveGroup).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanPostMessage).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanViewGroup).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanViewMembership).build());
 
         return builder.build();
     }

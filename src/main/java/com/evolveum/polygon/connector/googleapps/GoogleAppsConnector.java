@@ -63,6 +63,9 @@ import static com.evolveum.polygon.connector.googleapps.LicenseAssignmentsHandle
 import static com.evolveum.polygon.connector.googleapps.OrgunitsHandler.*;
 import static com.evolveum.polygon.connector.googleapps.UserHandler.*;
 import com.evolveum.polygon.connector.googleapps.model.SchemaField;
+import com.google.api.services.groupssettings.Groupssettings;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Main implementation of the GoogleApps Connector.
@@ -137,6 +140,42 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
     public static final String TYPE_ATTR = "type";
     public static final String PRODUCT_ID_SKU_ID_USER_ID = "productId,skuId,userId";
     public static final String PHOTO_ATTR = "__PHOTO__";
+    
+    public static final String SETTING_id = "id";
+    public static final String SETTING_title = "title";
+    public static final String SETTING_content = "content";
+    public static final String SETTING_author_name = "author_name";
+    public static final String SETTING_email = "settings_email";
+    public static final String SETTING_name = "settings_name";
+    public static final String SETTING_description = "settings_description";
+    public static final String SETTING_whoCanJoin = "whoCanJoin";
+    public static final String SETTING_whoCanViewMembership = "whoCanViewMembership";
+    public static final String SETTING_whoCanViewGroup = "whoCanViewGroup";
+    public static final String SETTING_whoCanInvite = "whoCanInvite";
+    public static final String SETTING_whoCanAdd = "whoCanAdd";
+    public static final String SETTING_allowExternalMembers = "allowExternalMembers";
+    public static final String SETTING_whoCanPostMessage = "whoCanPostMessage";
+    public static final String SETTING_allowWebPosting = "allowWebPosting";
+    public static final String SETTING_maxMessageBytes = "maxMessageBytes";
+    public static final String SETTING_isArchived = "isArchived";
+    public static final String SETTING_archiveOnly = "archiveOnly";
+    public static final String SETTING_messageModerationLevel = "messageModerationLevel";
+    public static final String SETTING_spamModerationLevel = "spamModerationLevel";
+    public static final String SETTING_replyTo = "replyTo";
+    public static final String SETTING_customReplyTo = "customReplyTo";
+    public static final String SETTING_includeCustomFooter = "includeCustomFooter";
+    public static final String SETTING_customFooterText = "customFooterText";
+    public static final String SETTING_sendMessageDenyNotification = "sendMessageDenyNotification";
+    public static final String SETTING_defaultMessageDenyNotificationText = "defaultMessageDenyNotificationText";
+    public static final String SETTING_showInGroupDirectory = "showInGroupDirectory";
+    public static final String SETTING_allowGoogleCommunication = "allowGoogleCommunication";
+    public static final String SETTING_membersCanPostAsTheGroup = "membersCanPostAsTheGroup";
+    public static final String SETTING_messageDisplayFont = "messageDisplayFont";
+    public static final String SETTING_includeInGlobalAddressList = "includeInGlobalAddressList";
+    public static final String SETTING_whoCanLeaveGroup = "whoCanLeaveGroup";
+    public static final String SETTING_whoCanContactOwner = "whoCanContactOwner";
+    
+
     
     /**
      * Place holder for the {@link Configuration} passed into the init() method
@@ -902,7 +941,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
         }
     }
 
-    private void executeGroupReadQuery(Uid uid, final ResultsHandler handler, OperationOptions options, final Set<String> attributesToGet) {
+    private void executeGroupReadQuery(Uid uid, final ResultsHandler handler,final OperationOptions options, final Set<String> attributesToGet) {
         try {
             // Try the cache first
             ConnectorObject cachedGroup = objectsCache.getGroup(uid.getUidValue());
@@ -920,7 +959,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
                         public Boolean handleResult(final Directory.Groups.Get request,
                                                     final Group value) {
                             ConnectorObject group = fromGroup(value, attributesToGet,
-                                    configuration.getDirectory().members());
+                                    configuration.getDirectory().members(), configuration.getGroupSettings().groups());
                             objectsCache.addGroup(group);
                             return handler.handle(group);
                         }
@@ -977,7 +1016,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
                                     for (Group group : value.getGroups()) {
                                         handler.handle(fromGroup(group,
                                                 attributesToGet, configuration
-                                                        .getDirectory().members()));
+                                                        .getDirectory().members(), configuration.getGroupSettings().groups()));
                                     }
                                 }
                                 return value.getNextPageToken();
@@ -1849,7 +1888,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
     }
 
     protected ConnectorObject fromGroup(Group group, Set<String> attributesToGet,
-                                        Directory.Members service) {
+                                        Directory.Members service, Groupssettings.Groups gsService) {
         ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
         builder.setObjectClass(ObjectClass.GROUP);
 
@@ -1891,6 +1930,19 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
             builder.addAttribute(AttributeBuilder.build(MEMBERS_ATTR, listMembers(service, group
                     .getId(), null)));
         }
+        
+        // Expensive to get
+        //TODO do somehow else "null != attributesToGet &&" breaks associations functions
+        if (null == attributesToGet || attributesToGet.contains(MEMBERS_ATTR)) {
+            builder.addAttribute(AttributeBuilder.build(MEMBERS_ATTR, listMembers(service, group
+                    .getId(), null)));
+        }
+        
+        //TODO vyhodnoceni zda je potreba tahat settingy
+        Map<String, Object> groupSettingsMap = listSettings(gsService, group.getEmail());
+        for(String key : groupSettingsMap.keySet()){
+            builder.addAttribute(AttributeBuilder.build(key, groupSettingsMap.get(key)));
+        }
 
         return builder.build();
     }
@@ -1908,6 +1960,55 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
             }
         }
         return resultMembers;
+    }
+    
+    protected Map<String, Object> listSettings(Groupssettings.Groups service, String groupEmail) {
+        try {
+            Map<String, Object> result = new HashMap<>();
+            Groupssettings.Groups.Get request = service.get(groupEmail).setAlt("json");
+            com.google.api.services.groupssettings.model.Groups reqResult = request.execute();
+            //prekonvertit vysledek na mapu
+            result.put(SETTING_allowExternalMembers, reqResult.getAllowExternalMembers());
+            result.put(SETTING_allowGoogleCommunication, reqResult.getAllowGoogleCommunication());
+            result.put(SETTING_allowWebPosting, reqResult.getAllowWebPosting());
+            result.put(SETTING_archiveOnly, reqResult.getArchiveOnly());
+            //result.put(SETTING_author_name, reqResult.);
+            //result.put(SETTING_content, reqResult.getC);
+            result.put(SETTING_customFooterText, reqResult.getCustomFooterText());
+            result.put(SETTING_customReplyTo, reqResult.getCustomReplyTo());
+            result.put(SETTING_defaultMessageDenyNotificationText, reqResult.getDefaultMessageDenyNotificationText());
+            result.put(SETTING_description, reqResult.getDescription());
+            result.put(SETTING_email, reqResult.getEmail());
+            //result.put(SETTING_id, reqResult.get);
+            result.put(SETTING_includeInGlobalAddressList, reqResult.getIncludeInGlobalAddressList());
+            result.put(SETTING_isArchived, reqResult.getIsArchived());
+            result.put(SETTING_maxMessageBytes, reqResult.getMaxMessageBytes());
+            result.put(SETTING_membersCanPostAsTheGroup, reqResult.getMembersCanPostAsTheGroup());
+            result.put(SETTING_messageDisplayFont, reqResult.getMessageDisplayFont());
+            result.put(SETTING_messageModerationLevel, reqResult.getMessageModerationLevel());
+            result.put(SETTING_name, reqResult.getName());
+            result.put(SETTING_replyTo, reqResult.getReplyTo());
+            result.put(SETTING_sendMessageDenyNotification, reqResult.getSendMessageDenyNotification());
+            result.put(SETTING_showInGroupDirectory, reqResult.getShowInGroupDirectory());
+            result.put(SETTING_spamModerationLevel, reqResult.getSpamModerationLevel());
+            //result.put(SETTING_title, reqResult.getTi);
+            result.put(SETTING_whoCanAdd, reqResult.getWhoCanAdd());
+            result.put(SETTING_whoCanContactOwner, reqResult.getWhoCanContactOwner());
+            result.put(SETTING_whoCanInvite, reqResult.getWhoCanInvite());
+            result.put(SETTING_whoCanJoin, reqResult.getWhoCanJoin());
+            result.put(SETTING_whoCanLeaveGroup, reqResult.getWhoCanLeaveGroup());
+            result.put(SETTING_whoCanPostMessage, reqResult.getWhoCanPostMessage());
+            result.put(SETTING_whoCanViewGroup, reqResult.getWhoCanViewGroup());
+            result.put(SETTING_whoCanViewMembership, reqResult.getWhoCanViewMembership());
+            
+            return result;
+        } catch (GoogleJsonResponseException e) {
+            logger.warn(e, "Failed to initialize Members#Delete");
+            throw ConnectorException.wrap(e);
+        } catch (IOException ex) {
+            logger.warn(ex, "Failed to initialize Members#Delete");
+            throw ConnectorException.wrap(ex);
+        }
     }
 
     //TODO dodelat po te listOwners a listManagers a vystavit obdobny attribut
