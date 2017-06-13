@@ -66,6 +66,7 @@ import com.evolveum.polygon.connector.googleapps.model.SchemaField;
 import com.google.api.services.groupssettings.Groupssettings;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.identityconnectors.framework.common.exceptions.ConnectorIOException;
 
 /**
  * Main implementation of the GoogleApps Connector.
@@ -1560,6 +1561,17 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
                             }
                         });
             }
+            
+            final Groupssettings.Groups.Patch settingsPatch = updateGroupSettings(configuration.getGroupSettings().groups(), attributesAccessor, uid, configuration.getDirectory().groups());
+            if (null != settingsPatch) {
+                try {
+                    settingsPatch.execute();
+                } catch (IOException ex) {
+                    Logger.getLogger(GoogleAppsConnector.class.getName()).log(Level.SEVERE, null, ex);
+                    throw new ConnectorIOException(ex);
+                }
+            }
+            
             Attribute members = attributesAccessor.find(MEMBERS_ATTR);
             if (null != members && null != members.getValue()) {
                 final Directory.Members service = configuration.getDirectory().members();
@@ -2010,7 +2022,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
             throw ConnectorException.wrap(ex);
         }
     }
-
+    
     //TODO dodelat po te listOwners a listManagers a vystavit obdobny attribut
     protected List<Map<String, String>> listAllMembers(Directory.Members service, String groupKey, String roles) {
         final long startTime = System.currentTimeMillis();

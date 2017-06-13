@@ -64,6 +64,12 @@ import org.identityconnectors.framework.common.objects.filter.StartsWithFilter;
 import com.google.api.services.admin.directory.Directory;
 import com.google.api.services.admin.directory.model.Group;
 import com.google.api.services.admin.directory.model.Member;
+import com.google.api.services.groupssettings.Groupssettings;
+import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.commons.beanutils.BeanUtils;
+import org.identityconnectors.framework.common.exceptions.ConnectorIOException;
 
 /**
  * A GroupHandler is a util class to cover all Group related operations.
@@ -234,7 +240,7 @@ public class GroupHandler implements FilterVisitor<Void, Directory.Groups.List> 
         builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_includeCustomFooter).build());
         builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_includeInGlobalAddressList).build());
         builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_isArchived).build());
-        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_maxMessageBytes).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_maxMessageBytes, Integer.TYPE).build());
         builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_membersCanPostAsTheGroup).build());
         builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_messageDisplayFont).build());
         builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_messageModerationLevel).build());
@@ -345,6 +351,94 @@ public class GroupHandler implements FilterVisitor<Void, Directory.Groups.List> 
         } catch (IOException e) {
             logger.warn(e, "Failed to initialize Groups#Patch");
             throw ConnectorException.wrap(e);
+        }
+    }
+    
+    public static Groupssettings.Groups.Patch updateGroupSettings(Groupssettings.Groups service, AttributesAccessor attributes, Uid uid, Directory.Groups dirService) {
+        com.google.api.services.groupssettings.model.Groups groupSettings = null;
+        
+        String email = findGroupEmail(uid, dirService);
+        if(email == null){
+            logger.warn("not found email address for group with uid: " + uid.getUidValue());
+            return null;
+        }
+        
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_allowExternalMembers);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_allowWebPosting);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_archiveOnly);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_customFooterText);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_customReplyTo);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_defaultMessageDenyNotificationText);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_description);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_email);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_includeInGlobalAddressList);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_isArchived);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_maxMessageBytes);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_membersCanPostAsTheGroup);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_messageDisplayFont);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_messageModerationLevel);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_name);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_replyTo);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_sendMessageDenyNotification);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_showInGroupDirectory);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_spamModerationLevel);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_whoCanAdd);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_whoCanContactOwner);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_whoCanInvite);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_whoCanJoin);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_whoCanLeaveGroup);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_whoCanPostMessage);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_whoCanViewGroup);
+        groupSettings = setAttribute(groupSettings, attributes, GoogleAppsConnector.SETTING_whoCanViewMembership);
+        
+        if (null == groupSettings) {
+            return null;
+        }
+        try {
+            return service.patch(email, groupSettings);
+            // } catch (HttpResponseException e){
+        } catch (IOException e) {
+            logger.warn(e, "Failed to initialize Groups#Patch");
+            throw ConnectorException.wrap(e);
+        }
+    }
+    
+    public static com.google.api.services.groupssettings.model.Groups setAttribute(com.google.api.services.groupssettings.model.Groups groupSettings, AttributesAccessor attributes, String attributeName){
+        Attribute attributeValue = attributes.find(attributeName);
+        attributeName = attributeName.replaceAll("setting_", "");//hack for duplicately named attributes
+        if (null != attributeValue) {
+            String stringValue = GoogleAppsUtil.getStringValueWithDefault(attributeValue, null);
+            if (null != stringValue) {
+                try {
+                    if (null == groupSettings) {
+                        groupSettings = new com.google.api.services.groupssettings.model.Groups();
+                    }
+                    //TODO reflexi
+                    BeanUtils.setProperty(groupSettings, attributeName, stringValue);
+                } catch (IllegalAccessException ex) {
+                    Logger.getLogger(GroupHandler.class.getName()).log(Level.SEVERE, null, ex);
+                    throw new RuntimeException(ex);
+                } catch (InvocationTargetException ex) {
+                    Logger.getLogger(GroupHandler.class.getName()).log(Level.SEVERE, null, ex);
+                    throw new RuntimeException(ex);
+                }
+            }
+        }
+        return groupSettings;
+    }
+    
+    public static String findGroupEmail(Uid uid, Directory.Groups service){
+        try {
+            Directory.Groups.Get request = service.get(uid.getUidValue()).setAlt("json");
+            Group reqResult = request.execute();
+            if(reqResult != null){
+                return reqResult.getEmail();
+            }else{
+                return null;
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(GroupHandler.class.getName()).log(Level.SEVERE, null, ex);
+            throw new ConnectorIOException(ex);
         }
     }
 
