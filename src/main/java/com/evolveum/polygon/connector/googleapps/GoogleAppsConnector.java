@@ -417,6 +417,16 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
                 }
             }
 
+            final Groupssettings.Groups.Patch settingsPatch = updateGroupSettings(configuration.getGroupSettings().groups(), accessor, uid, configuration.getDirectory().groups());
+            if (null != settingsPatch) {
+                try {
+                    settingsPatch.execute();
+                } catch (IOException ex) {
+                    Logger.getLogger(GoogleAppsConnector.class.getName()).log(Level.SEVERE, null, ex);
+                    throw new ConnectorIOException(ex);
+                }
+            }
+            
             return uid;
         } else if (MEMBER.equals(objectClass)) {
 
