@@ -62,6 +62,9 @@ import static com.evolveum.polygon.connector.googleapps.GroupHandler.*;
 import static com.evolveum.polygon.connector.googleapps.LicenseAssignmentsHandler.*;
 import static com.evolveum.polygon.connector.googleapps.OrgunitsHandler.*;
 import static com.evolveum.polygon.connector.googleapps.UserHandler.*;
+import com.evolveum.polygon.connector.googleapps.async.AsyncReqDAO;
+import com.evolveum.polygon.connector.googleapps.async.AsyncReqDAOfileImpl;
+import com.evolveum.polygon.connector.googleapps.async.MailboxExporter;
 import com.evolveum.polygon.connector.googleapps.model.SchemaField;
 import com.google.api.services.groupssettings.Groupssettings;
 import java.util.logging.Level;
@@ -186,6 +189,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
     private GoogleAppsConfiguration configuration;
     private ConnectorObjectsCache objectsCache;
     private Schema schema = null;
+    private AsyncReqDAO asyncReqDAO;
 
     /**
      * Gets the Configuration context for this connector.
@@ -205,6 +209,8 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
     public void init(final Configuration configuration) {
         this.configuration = (GoogleAppsConfiguration) configuration;
         objectsCache = ConnectorObjectsCache.getInstance(this.configuration, logger);
+        asyncReqDAO = new AsyncReqDAOfileImpl();
+        asyncReqDAO.init(this.configuration);
     }
 
     /**
@@ -490,7 +496,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
     public void delete(final ObjectClass objectClass, final Uid uid, final OperationOptions options) {
 
         AbstractGoogleJsonClientRequest<Void> request = null;
-
+        
         try {
             if (ObjectClass.ACCOUNT.equals(objectClass)) {
                 request = configuration.getDirectory().users().delete(uid.getUidValue());
@@ -552,6 +558,32 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
             objectsCache.removeUser(uid.getUidValue());
         } else if (ObjectClass.GROUP.equals(objectClass)) {
             objectsCache.removeGroup(uid.getUidValue());
+        }
+    }
+    
+    private void tryMailBoxExport(Uid uid, Directory.Users service){
+        String requestId = asyncReqDAO.findRequestId(uid);
+        MailboxExporter exporter = new MailboxExporter();
+        if(requestId == null){
+            String userEmail = exporter.findUserEmail(uid, service);
+            requestId = exporter.createMailboxForExport(configuration.getDomain(), userEmail);
+            asyncReqDAO.addRequestId(uid, requestId);
+            RetryableException re = RetryableException.wrap("Started exporting mailbox. User can not be deleted yet.", uid);
+            throw re;
+        }else{
+            String requestStatus = exporter.getRequestStatus(requestId);
+            if(MailboxExporter.REQUEST_STATUS_COMPLETED.equals(requestStatus)){
+                exporter.downloadPreparedExport(requestId);
+            }else if(MailboxExporter.REQUEST_STATUS_PENDING.equals(requestStatus)){
+                RetryableException re = RetryableException.wrap("Mailbox exporting in progress. User can not be deleted yet.", uid);
+                throw re;
+            }else if(MailboxExporter.REQUEST_STATUS_ERROR.equals(requestStatus)){
+                ConnectorException re = RetryableException.wrap("Mailbox exporting failed. User can not be deleted yet.", uid);
+                throw re;
+            }else{
+                ConnectorException re = RetryableException.wrap("Mailbox exporting failed. Unknown request status:" + requestStatus + " User can not be deleted yet.", uid);
+                throw re;
+            }
         }
     }
 

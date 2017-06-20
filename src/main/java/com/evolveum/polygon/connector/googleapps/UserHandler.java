@@ -71,8 +71,10 @@ import com.google.api.services.admin.directory.model.UserPhoto;
 import com.google.common.base.CharMatcher;
 import com.google.common.escape.Escaper;
 import com.google.common.escape.Escapers;
-import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.identityconnectors.framework.common.exceptions.ConnectorIOException;
 import org.identityconnectors.framework.common.objects.Uid;
 
 /**

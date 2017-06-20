@@ -80,6 +80,7 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
      */
     private String customerId;
     private String customFieldDelimiter;
+    private String asyncReqFile;
 
     /**
      * Constructor.
@@ -208,7 +209,7 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
         this.customerId = customerId;
     }
     
-    @ConfigurationProperty(order = 11, displayMessageKey = "customFieldDelimiter.display",
+    @ConfigurationProperty(order = 12, displayMessageKey = "customFieldDelimiter.display",
     groupMessageKey = "basic.group", helpMessageKey = "customFieldDelimiter.help", required = true,
     confidential = false)
     public String getCustomFieldDelimiter() {
@@ -217,6 +218,17 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
 
     public void setCustomFieldDelimiter(String customFieldDelimiter) {
         this.customFieldDelimiter = customFieldDelimiter;
+    }
+    
+    @ConfigurationProperty(order = 13, displayMessageKey = "asyncReqFile.display",
+    groupMessageKey = "basic.group", helpMessageKey = "asyncReqFile.help", required = true,
+    confidential = false)
+    public String getAsyncReqFile() {
+        return asyncReqFile;
+    }
+
+    public void setAsyncReqFile(String asyncReqFile) {
+        this.asyncReqFile = asyncReqFile;
     }
 
 
