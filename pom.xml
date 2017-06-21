@@ -162,6 +162,13 @@
             <artifactId>commons-beanutils</artifactId>
             <version>1.9.3</version>
         </dependency>
+        
+        <!-- https://mvnrepository.com/artifact/com.google.gdata/core -->
+        <dependency>
+            <groupId>com.google.gdata</groupId>
+            <artifactId>core</artifactId>
+            <version>1.47.1</version>
+        </dependency>
 
     </dependencies>
 </project>

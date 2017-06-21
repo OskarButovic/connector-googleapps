@@ -13,6 +13,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.identityconnectors.framework.common.exceptions.ConnectorIOException;
 import org.identityconnectors.framework.common.objects.Uid;
+import com.google.gdata.client.appsforyourdomain.audit.AuditService;
+import com.google.gdata.client.appsforyourdomain.audit.MailBoxDumpRequest;
+import com.google.gdata.data.appsforyourdomain.generic.GenericEntry;
+import com.google.gdata.util.ServiceException;
 
 /**
  *
@@ -25,9 +29,26 @@ public class MailboxExporter {
     public static final String REQUEST_STATUS_PENDING = "PENDING";
     
     
-    public String createMailboxForExport(String domain, String userEmail){
-        //TODO implement
-        return null;
+    public String createMailboxForExport(String userEmail, AuditService service){
+        try {
+            MailBoxDumpRequest request = new MailBoxDumpRequest();
+            request.setUserEmailAddress(userEmail);
+            
+            request.setIncludeDeleted(true);
+            request.setPackageContent("FULL_MESSAGE");
+            
+            GenericEntry mailboxDumpEntry = service.createMailboxDumpRequest(request);
+
+            //TODO overit datovou strukturu debugem
+            String requestId = mailboxDumpEntry.getProperty("requestId");
+            return requestId;
+        } catch (IOException ex) {
+            Logger.getLogger(MailboxExporter.class.getName()).log(Level.SEVERE, null, ex);
+            throw new RuntimeException(ex);
+        } catch (ServiceException ex) {
+            Logger.getLogger(MailboxExporter.class.getName()).log(Level.SEVERE, null, ex);
+            throw new RuntimeException(ex);
+        }
     }
     
     public String getRequestStatus(String requestId){

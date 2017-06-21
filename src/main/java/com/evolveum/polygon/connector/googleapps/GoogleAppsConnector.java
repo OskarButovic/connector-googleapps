@@ -566,7 +566,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
         MailboxExporter exporter = new MailboxExporter();
         if(requestId == null){
             String userEmail = exporter.findUserEmail(uid, service);
-            requestId = exporter.createMailboxForExport(configuration.getDomain(), userEmail);
+            requestId = exporter.createMailboxForExport(userEmail, configuration.getAuditService());
             asyncReqDAO.addRequestId(uid, requestId);
             RetryableException re = RetryableException.wrap("Started exporting mailbox. User can not be deleted yet.", uid);
             throw re;

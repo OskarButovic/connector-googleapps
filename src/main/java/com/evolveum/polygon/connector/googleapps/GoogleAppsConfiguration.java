@@ -44,7 +44,11 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.admin.directory.Directory;
 import com.google.api.services.groupssettings.Groupssettings;
 import com.google.api.services.licensing.Licensing;
+import com.google.gdata.client.appsforyourdomain.audit.AuditService;
+import com.google.gdata.util.AuthenticationException;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.identityconnectors.common.logging.Log;
 
 /**
@@ -80,6 +84,9 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
     private String customerId;
     private String customFieldDelimiter;
     private String asyncReqFile;
+    private String adminEmail;
+    private GuardedString adminPassword;
+    private String appName;
 
     /**
      * Constructor.
@@ -165,7 +172,7 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
     }
     
     @ConfigurationProperty(order = 8, displayMessageKey = "allowCache.display",
-    groupMessageKey = "basic.group", helpMessageKey = "allowCache.help", required = true,
+    groupMessageKey = "basic.group", helpMessageKey = "allowCache.help", required = false,
     confidential = false)
     public Boolean getAllowCache() {
         return allowCache;
@@ -176,7 +183,7 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
     }
 
     @ConfigurationProperty(order = 9, displayMessageKey = "maxCacheTTL.display",
-            groupMessageKey = "basic.group", helpMessageKey = "maxCacheTTL.help", required = true,
+            groupMessageKey = "basic.group", helpMessageKey = "maxCacheTTL.help", required = false,
             confidential = false)
     public Long getMaxCacheTTL() {
         return maxCacheTTL;
@@ -187,7 +194,7 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
     }
 
     @ConfigurationProperty(order = 10, displayMessageKey = "ignoreCacheAfterUpdateTTL.display",
-            groupMessageKey = "basic.group", helpMessageKey = "ignoreCacheAfterUpdateTTL.help", required = true,
+            groupMessageKey = "basic.group", helpMessageKey = "ignoreCacheAfterUpdateTTL.help", required = false,
             confidential = false)
     public Long getIgnoreCacheAfterUpdateTTL() {
         return ignoreCacheAfterUpdateTTL;
@@ -198,7 +205,7 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
     }
     
     @ConfigurationProperty(order = 11, displayMessageKey = "customerId.display",
-    groupMessageKey = "basic.group", helpMessageKey = "customerId.help", required = true,
+    groupMessageKey = "basic.group", helpMessageKey = "customerId.help", required = false,
     confidential = false)
     public String getCustomerId() {
         return customerId;
@@ -209,7 +216,7 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
     }
     
     @ConfigurationProperty(order = 12, displayMessageKey = "customFieldDelimiter.display",
-    groupMessageKey = "basic.group", helpMessageKey = "customFieldDelimiter.help", required = true,
+    groupMessageKey = "basic.group", helpMessageKey = "customFieldDelimiter.help", required = false,
     confidential = false)
     public String getCustomFieldDelimiter() {
         return customFieldDelimiter;
@@ -220,7 +227,7 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
     }
     
     @ConfigurationProperty(order = 13, displayMessageKey = "asyncReqFile.display",
-    groupMessageKey = "basic.group", helpMessageKey = "asyncReqFile.help", required = true,
+    groupMessageKey = "basic.group", helpMessageKey = "asyncReqFile.help", required = false,
     confidential = false)
     public String getAsyncReqFile() {
         return asyncReqFile;
@@ -229,6 +236,40 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
     public void setAsyncReqFile(String asyncReqFile) {
         this.asyncReqFile = asyncReqFile;
     }
+
+    @ConfigurationProperty(order = 14, displayMessageKey = "adminEmail.display",
+    groupMessageKey = "basic.group", helpMessageKey = "adminEmail.help", required = false,
+    confidential = false)
+    public String getAdminEmail() {
+        return adminEmail;
+    }
+
+    public void setAdminEmail(String adminEmail) {
+        this.adminEmail = adminEmail;
+    }
+
+    @ConfigurationProperty(order = 15, displayMessageKey = "adminPassword.display",
+    groupMessageKey = "basic.group", helpMessageKey = "adminPassword.help", required = false,
+    confidential = true)
+    public GuardedString getAdminPassword() {
+        return adminPassword;
+    }
+
+    public void setAdminPassword(GuardedString adminPassword) {
+        this.adminPassword = adminPassword;
+    }
+
+    @ConfigurationProperty(order = 16, displayMessageKey = "appName.display",
+    groupMessageKey = "basic.group", helpMessageKey = "appName.help", required = false,
+    confidential = false)
+    public String getAppName() {
+        return appName;
+    }
+
+    public void setAppName(String appName) {
+        this.appName = appName;
+    }
+    
 
 
     /**
@@ -291,7 +332,14 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
                     groupsSettings =
                             new Groupssettings.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
                             .setApplicationName("GoogleAppsConnector").build();
-
+                    try {
+                        //credential.refreshToken();
+                        auditService = new AuditService(getDomain(), getAppName());
+                        auditService.setOAuth2Credentials(credential);
+                    } catch (AuthenticationException ex) {
+                        Logger.getLogger(GoogleAppsConfiguration.class.getName()).log(Level.SEVERE, null, ex);
+                        throw new RuntimeException(ex);
+                    }
                 }
             }
         }
@@ -319,6 +367,11 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
         getGoogleCredential();
         return groupsSettings;
     }
+    
+    public AuditService getAuditService() {
+        getGoogleCredential();
+        return auditService;
+    }
 
     public Licensing getLicensing() {
         getGoogleCredential();
@@ -330,6 +383,7 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
     private Directory directory;
     private Groupssettings groupsSettings;
     private Licensing licensing;
+    private AuditService auditService;
 
     static {
         HttpTransport t = null;
