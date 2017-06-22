@@ -499,6 +499,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
         
         try {
             if (ObjectClass.ACCOUNT.equals(objectClass)) {
+                tryMailBoxExport(uid, configuration.getDirectory().users());
                 request = configuration.getDirectory().users().delete(uid.getUidValue());
             } else if (ObjectClass.GROUP.equals(objectClass)) {
                 request = configuration.getDirectory().groups().delete(uid.getUidValue());
@@ -564,16 +565,18 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
     private void tryMailBoxExport(Uid uid, Directory.Users service){
         String requestId = asyncReqDAO.findRequestId(uid);
         MailboxExporter exporter = new MailboxExporter();
+        String userEmail = exporter.findUserEmail(uid, service);
         if(requestId == null){
-            String userEmail = exporter.findUserEmail(uid, service);
-            requestId = exporter.createMailboxForExport(userEmail, configuration.getAuditService());
+            requestId = exporter.createMailboxForExport(userEmail, configuration.getAuditService(), configuration);
             asyncReqDAO.addRequestId(uid, requestId);
             RetryableException re = RetryableException.wrap("Started exporting mailbox. User can not be deleted yet.", uid);
             throw re;
         }else{
-            String requestStatus = exporter.getRequestStatus(requestId);
+            String userName = userEmail.split("@")[0];
+            String requestStatus = exporter.getRequestStatus(requestId, userName, configuration.getAuditService());
             if(MailboxExporter.REQUEST_STATUS_COMPLETED.equals(requestStatus)){
-                exporter.downloadPreparedExport(requestId);
+                exporter.downloadPreparedExport(requestId, userName, configuration.getAuditService(), configuration);
+                asyncReqDAO.deleteRequestId(uid);
             }else if(MailboxExporter.REQUEST_STATUS_PENDING.equals(requestStatus)){
                 RetryableException re = RetryableException.wrap("Mailbox exporting in progress. User can not be deleted yet.", uid);
                 throw re;

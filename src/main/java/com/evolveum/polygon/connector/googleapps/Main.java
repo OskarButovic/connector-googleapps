@@ -79,6 +79,8 @@ public class Main {
             "https://www.googleapis.com/auth/admin.directory.userschema.readonly";
     public static final java.lang.String GROUPS_SETTINGS =
             "https://www.googleapis.com/auth/apps.groups.settings";
+    public static final java.lang.String AUDIT =
+            "https://apps-apis.google.com/a/feeds/compliance/audit/";
     // @formatter:off
     private static final List<String> SCOPES = Arrays.asList(
             ADMIN_DIRECTORY_GROUP,
@@ -86,7 +88,8 @@ public class Main {
             ADMIN_DIRECTORY_USER,
             ADMIN_ENTERPRISE_LICENSE,
             CUSTOM_SCHEMA_READONLY,
-            GROUPS_SETTINGS);
+            GROUPS_SETTINGS,
+            AUDIT);
     // @formatter:on
     /**
      * Global instance of the HTTP transport.

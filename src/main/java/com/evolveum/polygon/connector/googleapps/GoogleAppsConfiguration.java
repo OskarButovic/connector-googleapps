@@ -85,8 +85,8 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
     private String customFieldDelimiter;
     private String asyncReqFile;
     private String adminEmail;
-    private GuardedString adminPassword;
     private String appName;
+    private String mailboxExportDir;
 
     /**
      * Constructor.
@@ -248,17 +248,6 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
         this.adminEmail = adminEmail;
     }
 
-    @ConfigurationProperty(order = 15, displayMessageKey = "adminPassword.display",
-    groupMessageKey = "basic.group", helpMessageKey = "adminPassword.help", required = false,
-    confidential = true)
-    public GuardedString getAdminPassword() {
-        return adminPassword;
-    }
-
-    public void setAdminPassword(GuardedString adminPassword) {
-        this.adminPassword = adminPassword;
-    }
-
     @ConfigurationProperty(order = 16, displayMessageKey = "appName.display",
     groupMessageKey = "basic.group", helpMessageKey = "appName.help", required = false,
     confidential = false)
@@ -268,6 +257,17 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
 
     public void setAppName(String appName) {
         this.appName = appName;
+    }
+
+    @ConfigurationProperty(order = 17, displayMessageKey = "mailboxExportDir.display",
+    groupMessageKey = "basic.group", helpMessageKey = "mailboxExportDir.help", required = false,
+    confidential = false)
+    public String getMailboxExportDir() {
+        return mailboxExportDir;
+    }
+
+    public void setMailboxExportDir(String mailboxExportDir) {
+        this.mailboxExportDir = mailboxExportDir;
     }
     
 
