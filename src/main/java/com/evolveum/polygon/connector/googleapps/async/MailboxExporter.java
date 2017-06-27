@@ -32,7 +32,7 @@ import java.util.List;
  */
 public class MailboxExporter {
     
-    public static final String REQUEST_STATUS_COMPLETED = "CREATED";
+    public static final String REQUEST_STATUS_COMPLETED = "COMPLETED";
     public static final String REQUEST_STATUS_ERROR = "ERROR";
     public static final String REQUEST_STATUS_PENDING = "PENDING";
     

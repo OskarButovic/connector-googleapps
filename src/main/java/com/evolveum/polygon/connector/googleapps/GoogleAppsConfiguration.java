@@ -83,6 +83,7 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
      */
     private String customerId;
     private String customFieldDelimiter;
+    private Boolean exportMailboxOnDelete;
     private String asyncReqFile;
     private String adminEmail;
     private String appName;
@@ -269,6 +270,18 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
     public void setMailboxExportDir(String mailboxExportDir) {
         this.mailboxExportDir = mailboxExportDir;
     }
+
+    @ConfigurationProperty(order = 17, displayMessageKey = "exportMailboxOnDelete.display",
+    groupMessageKey = "basic.group", helpMessageKey = "exportMailboxOnDelete.help", required = false,
+    confidential = false)
+    public Boolean getExportMailboxOnDelete() {
+        return exportMailboxOnDelete;
+    }
+
+    public void setExportMailboxOnDelete(Boolean exportMailboxOnDelete) {
+        this.exportMailboxOnDelete = exportMailboxOnDelete;
+    }
+    
     
 
 

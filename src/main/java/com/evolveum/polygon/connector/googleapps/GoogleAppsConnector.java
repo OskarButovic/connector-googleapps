@@ -563,6 +563,9 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
     }
     
     private void tryMailBoxExport(Uid uid, Directory.Users service){
+        if(configuration.getExportMailboxOnDelete() == null || !configuration.getExportMailboxOnDelete().booleanValue()){
+            return;
+        }
         String requestId = asyncReqDAO.findRequestId(uid);
         MailboxExporter exporter = new MailboxExporter();
         String userEmail = exporter.findUserEmail(uid, service);
