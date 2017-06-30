@@ -82,7 +82,7 @@ public class Main {
     public static final java.lang.String AUDIT =
             "https://apps-apis.google.com/a/feeds/compliance/audit/";
     // @formatter:off
-    private static final List<String> SCOPES = Arrays.asList(
+    public static final List<String> SCOPES = Arrays.asList(
             ADMIN_DIRECTORY_GROUP,
             ADMIN_DIRECTORY_ORGUNIT,
             ADMIN_DIRECTORY_USER,

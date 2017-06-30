@@ -88,6 +88,9 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
     private String adminEmail;
     private String appName;
     private String mailboxExportDir;
+    private Boolean changeDocOwnershipOnDelete;
+    private String serviceAccountId;
+    private String drivePrivateCert;
 
     /**
      * Constructor.
@@ -281,6 +284,39 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
     public void setExportMailboxOnDelete(Boolean exportMailboxOnDelete) {
         this.exportMailboxOnDelete = exportMailboxOnDelete;
     }
+
+    @ConfigurationProperty(order = 18, displayMessageKey = "changeDocOwnershipOnDelete.display",
+    groupMessageKey = "basic.group", helpMessageKey = "changeDocOwnershipOnDelete.help", required = false,
+    confidential = false)
+    public Boolean getChangeDocOwnershipOnDelete() {
+        return changeDocOwnershipOnDelete;
+    }
+
+    public void setChangeDocOwnershipOnDelete(Boolean changeDocOwnershipOnDelete) {
+        this.changeDocOwnershipOnDelete = changeDocOwnershipOnDelete;
+    }
+
+    @ConfigurationProperty(order = 19, displayMessageKey = "serviceAccountId.display",
+    groupMessageKey = "basic.group", helpMessageKey = "serviceAccountId.help", required = false,
+    confidential = false)
+    public String getServiceAccountId() {
+        return serviceAccountId;
+    }
+
+    public void setServiceAccountId(String serviceAccountId) {
+        this.serviceAccountId = serviceAccountId;
+    }
+
+    @ConfigurationProperty(order = 20, displayMessageKey = "drivePrivateCert.display",
+    groupMessageKey = "basic.group", helpMessageKey = "drivePrivateCert.help", required = false,
+    confidential = false)
+    public String getDrivePrivateCert() {
+        return drivePrivateCert;
+    }
+
+    public void setDrivePrivateCert(String drivePrivateCert) {
+        this.drivePrivateCert = drivePrivateCert;
+    }
     
     
 
@@ -365,11 +401,11 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
     /**
      * Global instance of the HTTP transport.
      */
-    private static final HttpTransport HTTP_TRANSPORT;
+    public static final HttpTransport HTTP_TRANSPORT;
     /**
      * Global instance of the JSON factory.
      */
-    private static final JsonFactory JSON_FACTORY = new JacksonFactory();
+    public static final JsonFactory JSON_FACTORY = new JacksonFactory();
 
     public Directory getDirectory() {
         getGoogleCredential();
