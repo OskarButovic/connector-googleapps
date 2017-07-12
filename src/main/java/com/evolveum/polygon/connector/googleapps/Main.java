@@ -45,6 +45,7 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.MemoryDataStoreFactory;
+import com.google.api.services.drive.DriveScopes;
 import java.io.FileWriter;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -81,6 +82,8 @@ public class Main {
             "https://www.googleapis.com/auth/apps.groups.settings";
     public static final java.lang.String AUDIT =
             "https://apps-apis.google.com/a/feeds/compliance/audit/";
+    public static final java.lang.String DRIVE_SCOPE = 
+            DriveScopes.DRIVE;
     // @formatter:off
     public static final List<String> SCOPES = Arrays.asList(
             ADMIN_DIRECTORY_GROUP,
@@ -89,7 +92,11 @@ public class Main {
             ADMIN_ENTERPRISE_LICENSE,
             CUSTOM_SCHEMA_READONLY,
             GROUPS_SETTINGS,
-            AUDIT);
+            AUDIT,
+            DRIVE_SCOPE);
+    
+    public static final List<String> DRIVE_SCOPES = Arrays.asList(
+            DRIVE_SCOPE);
     // @formatter:on
     /**
      * Global instance of the HTTP transport.

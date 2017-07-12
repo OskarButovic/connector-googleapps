@@ -65,6 +65,7 @@ import static com.evolveum.polygon.connector.googleapps.UserHandler.*;
 import com.evolveum.polygon.connector.googleapps.async.AsyncReqDAO;
 import com.evolveum.polygon.connector.googleapps.async.AsyncReqDAOfileImpl;
 import com.evolveum.polygon.connector.googleapps.async.MailboxExporter;
+import com.evolveum.polygon.connector.googleapps.drive.DriveHelper;
 import com.evolveum.polygon.connector.googleapps.model.SchemaField;
 import com.google.api.services.groupssettings.Groupssettings;
 import java.util.logging.Level;
@@ -500,6 +501,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
         try {
             if (ObjectClass.ACCOUNT.equals(objectClass)) {
                 tryMailBoxExport(uid, configuration.getDirectory().users());
+                tryOwnershipChange(uid, configuration.getDirectory().users());
                 request = configuration.getDirectory().users().delete(uid.getUidValue());
             } else if (ObjectClass.GROUP.equals(objectClass)) {
                 request = configuration.getDirectory().groups().delete(uid.getUidValue());
@@ -591,6 +593,17 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
                 throw re;
             }
         }
+    }
+    
+    private void tryOwnershipChange(Uid uid, Directory.Users service){
+        if(configuration.getChangeDocOwnershipOnDelete() == null || !configuration.getChangeDocOwnershipOnDelete().booleanValue()){
+            return;
+        }
+        MailboxExporter exporter = new MailboxExporter();
+        String userEmail = exporter.findUserEmail(uid, service);
+        DriveHelper driveHelper = new DriveHelper();
+        String driveInheritor = DriveHelper.findUserDriveInheritor(uid, service, configuration);
+        driveHelper.changeOwnerships(userEmail, driveInheritor, configuration);
     }
 
     /**

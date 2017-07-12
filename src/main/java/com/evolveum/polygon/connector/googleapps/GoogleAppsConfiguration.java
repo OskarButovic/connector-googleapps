@@ -91,6 +91,7 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
     private Boolean changeDocOwnershipOnDelete;
     private String serviceAccountId;
     private String drivePrivateCert;
+    private String driveInheritorAttribute;
 
     /**
      * Constructor.
@@ -317,6 +318,18 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
     public void setDrivePrivateCert(String drivePrivateCert) {
         this.drivePrivateCert = drivePrivateCert;
     }
+
+    @ConfigurationProperty(order = 21, displayMessageKey = "driveInheritorAttribute.display",
+    groupMessageKey = "basic.group", helpMessageKey = "driveInheritorAttribute.help", required = false,
+    confidential = false)
+    public String getDriveInheritorAttribute() {
+        return driveInheritorAttribute;
+    }
+
+    public void setDriveInheritorAttribute(String driveInheritorAttribute) {
+        this.driveInheritorAttribute = driveInheritorAttribute;
+    }
+    
     
     
 
