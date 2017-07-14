@@ -9,6 +9,7 @@ import com.evolveum.polygon.connector.googleapps.GoogleAppsConfiguration;
 import com.evolveum.polygon.connector.googleapps.GroupHandler;
 import com.evolveum.polygon.connector.googleapps.Main;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.services.admin.directory.Directory;
@@ -77,7 +78,7 @@ public class DriveHelper {
             throw new RuntimeException(ex);
         } catch (IOException ex) {
             Logger.getLogger(DriveHelper.class.getName()).log(Level.SEVERE, null, ex);
-            throw new RuntimeException(ex);
+            throw new ConnectorIOException(ex);
         }
     }
     
@@ -116,30 +117,49 @@ public class DriveHelper {
     }
 
     private void transferFile(String emailFrom, String emailTo, com.google.api.services.drive.model.File googleFile, Drive service) throws IOException {
-        Permissions.List request = service.permissions().list(googleFile.getId());
-        About about = service.about().get().setFields("user").execute();
-        String permissionId = about.getUser().getPermissionId();
-        List<Permission> filePermissions = new ArrayList<Permission>();
-        do {
-            PermissionList permissions = request.execute();
+        try{
+            Permissions.List request = service.permissions().list(googleFile.getId());
+            About about = service.about().get().setFields("user").execute();
+            String permissionId = about.getUser().getPermissionId();
+            List<Permission> filePermissions = new ArrayList<Permission>();
+            do {
+                PermissionList permissions = request.execute();
 
-            filePermissions.addAll(permissions.getPermissions());
-            request.setPageToken(permissions.getNextPageToken());
-        } while (request.getPageToken() != null && request.getPageToken().length() > 0);
-        for(Permission permission : filePermissions){
-            //TODO remove logger
-            Logger.getLogger(DriveHelper.class.getName()).log(Level.INFO, "google file permission \"" + permission + "\" listed by " + emailFrom + " with permissionId: " + permissionId);
-            //TODO make constants
-            if(permission.getRole() != null && permission.getRole().equals("owner") && permission.getId() != null && permission.getId().equals(permissionId)){
-                Permission newOwnerPermission = new Permission();
-                newOwnerPermission.setRole("owner");
-                newOwnerPermission.setEmailAddress(emailTo);
-                newOwnerPermission.setType("user");
-                Permissions.Create create = service.permissions().create(googleFile.getId(), newOwnerPermission);
-                create.setTransferOwnership(true);
-                create.execute();
+                filePermissions.addAll(permissions.getPermissions());
+                request.setPageToken(permissions.getNextPageToken());
+            } while (request.getPageToken() != null && request.getPageToken().length() > 0);
+            for(Permission permission : filePermissions){
+                //TODO remove logger
+                Logger.getLogger(DriveHelper.class.getName()).log(Level.INFO, "google file permission \"" + permission + "\" listed by " + emailFrom + " with permissionId: " + permissionId);
+                //TODO make constants
+                if(permission.getRole() != null && permission.getRole().equals("owner") && permission.getId() != null && permission.getId().equals(permissionId)){
+                    Permission newOwnerPermission = new Permission();
+                    newOwnerPermission.setRole("owner");
+                    newOwnerPermission.setEmailAddress(emailTo);
+                    newOwnerPermission.setType("user");
+                    Permissions.Create create = service.permissions().create(googleFile.getId(), newOwnerPermission);
+                    create.setTransferOwnership(true);
+                    create.execute();
+                }
+            }
+        }catch(GoogleJsonResponseException gjex){
+            if(isGjexOk(gjex, emailTo)){
+                Logger.getLogger(GroupHandler.class.getName()).log(Level.WARNING, null, gjex);
+            }else{
+                Logger.getLogger(DriveHelper.class.getName()).log(Level.SEVERE, null, gjex);
+                throw new RuntimeException(gjex);
             }
         }
     }
     
+    private boolean isGjexOk(GoogleJsonResponseException gjex, String emailTo){
+        int errorCode = gjex.getDetails().getCode();
+        String message = gjex.getDetails().getMessage();
+        if(errorCode == 400 && message != null && message.contains(emailTo)){
+            //error probably just says that it cannot send emails because user is disabled which is ok
+            return true;
+        }else{
+            return false;
+        }
+    }
 }
