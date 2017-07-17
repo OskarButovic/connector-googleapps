@@ -36,6 +36,12 @@ import org.identityconnectors.framework.common.objects.Uid;
 /**
  *
  * @author oskar.butovic
+ *//**
+ *
+ * @author oskar.butovic
+ *//**
+ *
+ * @author oskar.butovic
  */
 public class DriveHelper {
     
@@ -65,14 +71,13 @@ public class DriveHelper {
                 ownedFiles.addAll(files.getFiles());
                 request.setPageToken(files.getNextPageToken());
             } while (request.getPageToken() != null && request.getPageToken().length() > 0);
-            //TODO remove logger
-            //printFiles(ownedFiles, emailFrom);
             
+            String inheritedFolderId = null;
             for(com.google.api.services.drive.model.File googleFile : ownedFiles){
-                transferFile(emailFrom, emailTo, googleFile, service);
+                transferFile(emailFrom, emailTo, googleFile, service, inheritedFolderId, configuration);
             }
             
-            throw new RuntimeException("implementation not finished. Exception thrown to abort account delete.");
+            //exception to stop user deletion during development throw new RuntimeException("implementation not finished. Exception thrown to abort account delete.");
         } catch (GeneralSecurityException ex) {
             Logger.getLogger(DriveHelper.class.getName()).log(Level.SEVERE, null, ex);
             throw new RuntimeException(ex);
@@ -116,40 +121,77 @@ public class DriveHelper {
         }
     }
 
-    private void transferFile(String emailFrom, String emailTo, com.google.api.services.drive.model.File googleFile, Drive service) throws IOException {
-        try{
-            Permissions.List request = service.permissions().list(googleFile.getId());
-            About about = service.about().get().setFields("user").execute();
-            String permissionId = about.getUser().getPermissionId();
-            List<Permission> filePermissions = new ArrayList<Permission>();
-            do {
-                PermissionList permissions = request.execute();
+    private String transferFile(String emailFrom, String emailTo, com.google.api.services.drive.model.File googleFile, Drive service, String inheritedFolderId, GoogleAppsConfiguration configuration) throws IOException, GeneralSecurityException {
+        Permissions.List request = service.permissions().list(googleFile.getId());
+        About about = service.about().get().setFields("user").execute();
+        String permissionId = about.getUser().getPermissionId();
+        List<Permission> filePermissions = new ArrayList<Permission>();
+        Drive inheritorService = null;
+        do {
+            PermissionList permissions = request.execute();
 
-                filePermissions.addAll(permissions.getPermissions());
-                request.setPageToken(permissions.getNextPageToken());
-            } while (request.getPageToken() != null && request.getPageToken().length() > 0);
-            for(Permission permission : filePermissions){
-                //TODO remove logger
-                Logger.getLogger(DriveHelper.class.getName()).log(Level.INFO, "google file permission \"" + permission + "\" listed by " + emailFrom + " with permissionId: " + permissionId);
-                //TODO make constants
-                if(permission.getRole() != null && permission.getRole().equals("owner") && permission.getId() != null && permission.getId().equals(permissionId)){
-                    Permission newOwnerPermission = new Permission();
-                    newOwnerPermission.setRole("owner");
-                    newOwnerPermission.setEmailAddress(emailTo);
-                    newOwnerPermission.setType("user");
-                    Permissions.Create create = service.permissions().create(googleFile.getId(), newOwnerPermission);
-                    create.setTransferOwnership(true);
-                    create.execute();
+            filePermissions.addAll(permissions.getPermissions());
+            request.setPageToken(permissions.getNextPageToken());
+        } while (request.getPageToken() != null && request.getPageToken().length() > 0);
+        for(Permission permission : filePermissions){
+            //TODO remove logger
+            //Logger.getLogger(DriveHelper.class.getName()).log(Level.INFO, "google file permission \"" + permission + "\" listed by " + emailFrom + " with permissionId: " + permissionId);
+            //TODO make constants
+            if(permission.getRole() != null && permission.getRole().equals("owner") && permission.getId() != null && permission.getId().equals(permissionId)){
+                if(inheritorService == null){
+                    inheritorService = createInheritorService(emailTo, configuration);
                 }
-            }
-        }catch(GoogleJsonResponseException gjex){
-            if(isGjexOk(gjex, emailTo)){
-                Logger.getLogger(GroupHandler.class.getName()).log(Level.WARNING, null, gjex);
-            }else{
-                Logger.getLogger(DriveHelper.class.getName()).log(Level.SEVERE, null, gjex);
-                throw new RuntimeException(gjex);
+                if(inheritedFolderId == null){
+                    inheritedFolderId = createInheritorDirectory(emailFrom, inheritorService, configuration);
+                }
+
+                Permission newOwnerPermission = new Permission();
+                newOwnerPermission.setRole("owner");
+                newOwnerPermission.setEmailAddress(emailTo);
+                newOwnerPermission.setType("user");
+                Permissions.Create create = service.permissions().create(googleFile.getId(), newOwnerPermission);
+                create.setTransferOwnership(true);
+                try{
+                    create.execute();
+                }catch(GoogleJsonResponseException gjex){
+                    if(isGjexOk(gjex, emailTo)){
+                        Logger.getLogger(GroupHandler.class.getName()).log(Level.WARNING, null, gjex);
+                    }else{
+                        Logger.getLogger(DriveHelper.class.getName()).log(Level.SEVERE, null, gjex);
+                        throw new RuntimeException(gjex);
+                    }
+                }
+                addFileToDir(googleFile.getId(), inheritedFolderId, inheritorService);
             }
         }
+        return inheritedFolderId;
+    }
+    
+
+    
+    private String createInheritorDirectory(String emailFrom, Drive service, GoogleAppsConfiguration configuration) throws IOException, GeneralSecurityException{
+        com.google.api.services.drive.model.File fileMetadata = new com.google.api.services.drive.model.File();
+        fileMetadata.setName(configuration.getInheritedFolderPrefix() + emailFrom);
+        fileMetadata.setMimeType("application/vnd.google-apps.folder");
+        com.google.api.services.drive.model.File file = service.files().create(fileMetadata).setFields("id").execute();
+        return file.getId();
+    }
+    
+    private Drive createInheritorService(String emailTo, GoogleAppsConfiguration configuration) throws GeneralSecurityException, IOException{
+        JsonFactory JSON_FACTORY = GoogleAppsConfiguration.JSON_FACTORY;
+        HttpTransport httpTransport = GoogleAppsConfiguration.HTTP_TRANSPORT;
+        File privateKeyFile = new File(configuration.getDrivePrivateCert());
+        GoogleCredential credential = new GoogleCredential.Builder()
+                .setTransport(httpTransport)
+                .setJsonFactory(JSON_FACTORY)
+                .setServiceAccountId(configuration.getServiceAccountId())
+                .setServiceAccountPrivateKeyFromP12File(privateKeyFile)
+                .setServiceAccountScopes(Main.DRIVE_SCOPES)
+                .setServiceAccountUser(emailTo)
+                .setClientSecrets(configuration.getClientId(), SecurityUtil.decrypt(configuration.getClientSecret()))
+                .build();
+        Drive service = new Drive.Builder(httpTransport, JSON_FACTORY, credential).build();
+        return service;
     }
     
     private boolean isGjexOk(GoogleJsonResponseException gjex, String emailTo){
@@ -161,5 +203,10 @@ public class DriveHelper {
         }else{
             return false;
         }
+    }
+
+    private void addFileToDir(String googleFileId, String inheritedFolderId, Drive inheritorService) throws IOException {
+        com.google.api.services.drive.model.File tmpFile = new com.google.api.services.drive.model.File();
+        inheritorService.files().update(googleFileId, tmpFile).setAddParents(inheritedFolderId).execute();
     }
 }

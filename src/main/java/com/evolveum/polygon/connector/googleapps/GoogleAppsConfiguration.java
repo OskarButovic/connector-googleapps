@@ -92,6 +92,7 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
     private String serviceAccountId;
     private String drivePrivateCert;
     private String driveInheritorAttribute;
+    private String inheritedFolderPrefix;
 
     /**
      * Constructor.
@@ -329,11 +330,19 @@ public class GoogleAppsConfiguration extends AbstractConfiguration implements St
     public void setDriveInheritorAttribute(String driveInheritorAttribute) {
         this.driveInheritorAttribute = driveInheritorAttribute;
     }
-    
-    
-    
 
+    @ConfigurationProperty(order = 21, displayMessageKey = "inheritedFolderPrefix.display",
+    groupMessageKey = "basic.group", helpMessageKey = "inheritedFolderPrefix.help", required = false,
+    confidential = false)
+    public String getInheritedFolderPrefix() {
+        return inheritedFolderPrefix;
+    }
 
+    public void setInheritedFolderPrefix(String inheritedFolderPrefix) {
+        this.inheritedFolderPrefix = inheritedFolderPrefix;
+    }
+    
+    
     /**
      * {@inheritDoc}
      */
