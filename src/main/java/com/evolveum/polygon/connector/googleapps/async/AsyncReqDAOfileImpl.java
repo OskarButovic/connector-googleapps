@@ -31,13 +31,16 @@ public class AsyncReqDAOfileImpl implements AsyncReqDAO{
     public void init(GoogleAppsConfiguration configuration) {
         String filename = configuration.getAsyncReqFile();
         asincReqFile = new File(filename);
-        if(asincReqFile.exists()){
-            try {
+        try {
+            if(asincReqFile.exists()){
                 loadFile(asincReqFile);
-            } catch (IOException ex) {
-                Logger.getLogger(AsyncReqDAOfileImpl.class.getName()).log(Level.SEVERE, null, ex);
-                throw new RuntimeException("google suite connector could not load async request file: " + filename);
+            }else{
+                asincReqFile.createNewFile();
+                loadFile(asincReqFile);
             }
+        } catch (IOException ex) {
+            Logger.getLogger(AsyncReqDAOfileImpl.class.getName()).log(Level.SEVERE, null, ex);
+            throw new RuntimeException("google suite connector could not load async request file: " + filename);
         }
     }
 
