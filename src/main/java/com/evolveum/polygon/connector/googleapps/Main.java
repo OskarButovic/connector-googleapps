@@ -177,7 +177,7 @@ public class Main {
     }
 
     static Map<String, Object> getConfigurationMap(File clientJson) throws IOException,
-            URISyntaxException {
+            URISyntaxException, Exception {
         System.setProperty("https.protocols", "TLSv1.2");
 
         GoogleClientSecrets clientSecrets =

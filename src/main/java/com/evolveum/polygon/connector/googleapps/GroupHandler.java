@@ -247,16 +247,16 @@ public class GroupHandler implements FilterVisitor<Void, Directory.Groups.List> 
         builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_name).build());
         builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_replyTo).build());
         builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_sendMessageDenyNotification).build());
-        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_showInGroupDirectory).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_showInGroupDirectory).build());//rizeno
         builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_spamModerationLevel).build());
         builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanAdd).build());
-        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanContactOwner).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanContactOwner).build());//rizeno
         builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanInvite).build());
-        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanJoin).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanJoin).build());//rizeno
         builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanLeaveGroup).build());
-        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanPostMessage).build());
-        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanViewGroup).build());
-        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanViewMembership).build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanPostMessage).build());//rizeno
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanViewGroup).build());//rizeno
+        builder.addAttributeInfo(AttributeInfoBuilder.define(GoogleAppsConnector.SETTING_whoCanViewMembership).build());//rizeno
 
         return builder.build();
     }

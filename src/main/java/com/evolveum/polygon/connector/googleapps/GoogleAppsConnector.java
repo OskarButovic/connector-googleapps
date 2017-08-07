@@ -153,13 +153,13 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
     public static final String SETTING_email = "settings_email";
     public static final String SETTING_name = "settings_name";
     public static final String SETTING_description = "settings_description";
-    public static final String SETTING_whoCanJoin = "whoCanJoin";
-    public static final String SETTING_whoCanViewMembership = "whoCanViewMembership";
-    public static final String SETTING_whoCanViewGroup = "whoCanViewGroup";
+    public static final String SETTING_whoCanJoin = "whoCanJoin";//rizeno
+    public static final String SETTING_whoCanViewMembership = "whoCanViewMembership";//rizeno
+    public static final String SETTING_whoCanViewGroup = "whoCanViewGroup";//rizeno
     public static final String SETTING_whoCanInvite = "whoCanInvite";
     public static final String SETTING_whoCanAdd = "whoCanAdd";
     public static final String SETTING_allowExternalMembers = "allowExternalMembers";
-    public static final String SETTING_whoCanPostMessage = "whoCanPostMessage";
+    public static final String SETTING_whoCanPostMessage = "whoCanPostMessage";//rizeno
     public static final String SETTING_allowWebPosting = "allowWebPosting";
     public static final String SETTING_maxMessageBytes = "maxMessageBytes";
     public static final String SETTING_isArchived = "isArchived";
@@ -172,13 +172,13 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
     public static final String SETTING_customFooterText = "customFooterText";
     public static final String SETTING_sendMessageDenyNotification = "sendMessageDenyNotification";
     public static final String SETTING_defaultMessageDenyNotificationText = "defaultMessageDenyNotificationText";
-    public static final String SETTING_showInGroupDirectory = "showInGroupDirectory";
+    public static final String SETTING_showInGroupDirectory = "showInGroupDirectory";//rizeno
     public static final String SETTING_allowGoogleCommunication = "allowGoogleCommunication";
     public static final String SETTING_membersCanPostAsTheGroup = "membersCanPostAsTheGroup";
     public static final String SETTING_messageDisplayFont = "messageDisplayFont";
     public static final String SETTING_includeInGlobalAddressList = "includeInGlobalAddressList";
     public static final String SETTING_whoCanLeaveGroup = "whoCanLeaveGroup";
-    public static final String SETTING_whoCanContactOwner = "whoCanContactOwner";
+    public static final String SETTING_whoCanContactOwner = "whoCanContactOwner";//rizeno
     
 
     
@@ -1059,9 +1059,9 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
 
             // Implementation to support the 'OP_ATTRIBUTES_TO_GET'
             String fields = getFields(options, ID_ATTR, ETAG_ATTR, EMAIL_ATTR);
-            if (null != fields) {
-                request.setFields("nextPageToken,groups(" + fields + ")");
-            }
+            //if (null != fields) {
+            //    request.setFields("nextPageToken,groups(" + fields + ")");//it breaks group search in 3.6. removed
+            //}
 
             String nextPageToken = null;
             do {
@@ -1208,9 +1208,9 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
 
             // Implementation to support the 'OP_ATTRIBUTES_TO_GET'
             String fields = getFields(options, ID_ATTR, ETAG_ATTR, PRIMARY_EMAIL_ATTR);
-            if (null != fields) {
-                request.setFields("nextPageToken,users(" + fields + ")");
-            }
+            //if (null != fields) {
+            //    request.setFields("nextPageToken,users(" + fields + ")");//this breaks in midPoint 3.6. removed
+            //}
 
             if (options.getOptions().get(SHOW_DELETED_PARAM) instanceof Boolean) {
                 request.setShowDeleted(options.getOptions().get(SHOW_DELETED_PARAM)
