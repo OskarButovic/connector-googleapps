@@ -661,6 +661,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
      */
     public void executeQuery(ObjectClass objectClass, Filter query, final ResultsHandler handler,
                              OperationOptions options) {
+        options = new OperationOptions(new HashMap<String, Object>()); //FIXME options functionality is broken
         final long startTime = System.currentTimeMillis();
         final Set<String> attributesToGet = getAttributesToGet(objectClass, options);
         Uid uid = null;

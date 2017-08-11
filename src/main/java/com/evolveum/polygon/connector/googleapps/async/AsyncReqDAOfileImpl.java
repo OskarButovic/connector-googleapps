@@ -30,6 +30,9 @@ public class AsyncReqDAOfileImpl implements AsyncReqDAO{
     @Override
     public void init(GoogleAppsConfiguration configuration) {
         String filename = configuration.getAsyncReqFile();
+        if(filename == null || filename.isEmpty()){
+            return;
+        }
         asincReqFile = new File(filename);
         try {
             if(asincReqFile.exists()){

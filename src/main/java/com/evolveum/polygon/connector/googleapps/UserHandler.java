@@ -72,9 +72,8 @@ import com.google.common.base.CharMatcher;
 import com.google.common.escape.Escaper;
 import com.google.common.escape.Escapers;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.identityconnectors.framework.common.exceptions.ConnectorIOException;
+import org.identityconnectors.framework.common.objects.AttributeInfo;
+import org.identityconnectors.framework.common.objects.PredefinedAttributes;
 import org.identityconnectors.framework.common.objects.Uid;
 
 /**
@@ -520,7 +519,12 @@ public class UserHandler implements FilterVisitor<StringBuilder, Directory.Users
         builder.addAttributeInfo(AttributeInfoBuilder.define(PHOTO_ATTR, byte[].class)
                 .setReturnedByDefault(false).build());
 
-        builder.addAttributeInfo(PredefinedAttributeInfos.GROUPS);
+        AttributeInfo groupsInfo = AttributeInfoBuilder.define(PredefinedAttributes.GROUPS_NAME)
+                .setMultiValued(true)
+                .setReturnedByDefault(true)
+                .build();
+        
+        builder.addAttributeInfo(groupsInfo);
 
         List<SchemaField> customFields = connector.executeGetSchema();
         for(SchemaField field : customFields){
