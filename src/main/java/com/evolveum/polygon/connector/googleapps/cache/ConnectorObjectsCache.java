@@ -87,6 +87,10 @@ public class ConnectorObjectsCache {
     public void markUserAsUpdatedNow(String uid) {
         markObjectAsUpdatedNow(uid, ObjectType.USER);
     }
+    
+    public void markUserAsExpiredNow(String uid) {
+        markObjectAsExpiredNow(uid, ObjectType.USER);
+    }
 
     /**
      * Returns the group from cache or null if there is none (or expired).
@@ -106,6 +110,10 @@ public class ConnectorObjectsCache {
 
     public void markGroupAsUpdatedNow(String uid) {
         markObjectAsUpdatedNow(uid, ObjectType.GROUP);
+    }
+    
+    public void markGroupAsExpiredNow(String uid) {
+        markObjectAsExpiredNow(uid, ObjectType.GROUP);
     }
 
     @Nullable
@@ -166,6 +174,17 @@ public class ConnectorObjectsCache {
         if (objectWrapper != null) {
             objectWrapper.markAsUpdatedNow();
             logger.ok("Cache.markAsUpdatedNow() - " + type.name() + " - uid " + uid);
+        }
+    }
+    
+    private void markObjectAsExpiredNow(String uid, ObjectType type) {
+        if (!allowCache) {
+            return;
+        }
+        ConnectorObjectWrapper objectWrapper = getMap(type).get(uid);
+        if (objectWrapper != null) {
+            objectWrapper.markAsExpiredNow();
+            logger.ok("Cache.markAsExpiredNow() - " + type.name() + " - uid " + uid);
         }
     }
 

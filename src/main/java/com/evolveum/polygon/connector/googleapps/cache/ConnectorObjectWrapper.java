@@ -17,7 +17,7 @@ import org.joda.time.Duration;
 public class ConnectorObjectWrapper {
 
     private final ConnectorObject connectorObject;
-    private final DateTime timeAdded;
+    private DateTime timeAdded;
     private DateTime timeUpdated;
 
     public ConnectorObjectWrapper(ConnectorObject connectorObject) {
@@ -39,6 +39,10 @@ public class ConnectorObjectWrapper {
 
     public void markAsUpdatedNow() {
         this.timeUpdated = DateTime.now();
+    }
+    
+    public void markAsExpiredNow() {
+        this.timeAdded = new DateTime(0);
     }
 
     /**

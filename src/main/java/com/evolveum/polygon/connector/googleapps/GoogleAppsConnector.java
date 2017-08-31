@@ -497,7 +497,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
     public void delete(final ObjectClass objectClass, final Uid uid, final OperationOptions options) {
 
         AbstractGoogleJsonClientRequest<Void> request = null;
-        
+        try{
         try {
             if (ObjectClass.ACCOUNT.equals(objectClass)) {
                 tryMailBoxExport(uid, configuration.getDirectory().users());
@@ -556,11 +556,27 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
                         throw new UnknownUidException(uid, objectClass);
                     }
                 });
-
+        
+        }catch(Exception ex){
+            //we need to maintain information that object was recently changed 
+            //but we also need to remove (expire) that object after update ignoration period expires
+            if (ObjectClass.ACCOUNT.equals(objectClass)) {
+                objectsCache.markUserAsUpdatedNow(uid.getUidValue());
+                objectsCache.markUserAsExpiredNow(uid.getUidValue());
+            } else if (ObjectClass.GROUP.equals(objectClass)) {
+                objectsCache.markGroupAsUpdatedNow(uid.getUidValue());
+                objectsCache.markGroupAsExpiredNow(uid.getUidValue());
+            }
+            throw ex;
+        }
+        //we need to maintain information that object was recently changed 
+        //but we also need to remove (expire) that object after update ignoration period expires
         if (ObjectClass.ACCOUNT.equals(objectClass)) {
-            objectsCache.removeUser(uid.getUidValue());
+            objectsCache.markUserAsUpdatedNow(uid.getUidValue());
+            objectsCache.markUserAsExpiredNow(uid.getUidValue());
         } else if (ObjectClass.GROUP.equals(objectClass)) {
-            objectsCache.removeGroup(uid.getUidValue());
+            objectsCache.markGroupAsUpdatedNow(uid.getUidValue());
+            objectsCache.markGroupAsExpiredNow(uid.getUidValue());
         }
     }
     
@@ -1430,9 +1446,10 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
      */
     public Uid update(ObjectClass objectClass, Uid uid, Set<Attribute> replaceAttributes,
                       OperationOptions options) {
-        final AttributesAccessor attributesAccessor = new AttributesAccessor(replaceAttributes);
-
         Uid uidAfterUpdate = uid;
+        try{
+        final AttributesAccessor attributesAccessor = new AttributesAccessor(replaceAttributes);
+        
         if (ObjectClass.ACCOUNT.equals(objectClass)) {
 
             final Directory.Users.Patch patch
@@ -1523,7 +1540,9 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
                 }
             }
 
+            //redundant operation needed only in group update
             // groups member
+            /*
             Attribute groups = attributesAccessor.find(PredefinedAttributes.GROUPS_NAME);
             if (null != groups && null != groups.getValue()) {
                 final Directory.Members service = configuration.getDirectory().members();
@@ -1607,6 +1626,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
 
                 }
             }
+            */
         } else if (ObjectClass.GROUP.equals(objectClass)) {
 
             final Directory.Groups.Patch patch
@@ -1802,12 +1822,21 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
             throw new UnsupportedOperationException("Update of type"
                     + objectClass.getObjectClassValue() + " is not supported");
         }
-
+        
+        }catch(Exception ex){
+            if (ObjectClass.ACCOUNT.equals(objectClass)) {
+                objectsCache.markUserAsUpdatedNow(uidAfterUpdate.getUidValue());
+            } else if (ObjectClass.GROUP.equals(objectClass)) {
+                objectsCache.markGroupAsUpdatedNow(uidAfterUpdate.getUidValue());
+            }
+            throw ex; 
+        }
         if (ObjectClass.ACCOUNT.equals(objectClass)) {
             objectsCache.markUserAsUpdatedNow(uidAfterUpdate.getUidValue());
         } else if (ObjectClass.GROUP.equals(objectClass)) {
             objectsCache.markGroupAsUpdatedNow(uidAfterUpdate.getUidValue());
         }
+        
         return uidAfterUpdate;
     }
 
@@ -2282,7 +2311,7 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
                             if ("duplicate".equalsIgnoreCase(errorInfo.getReason())) {
                                 // Already Exists
                                 logger.warn("handling duplicate");
-                                handler.handleDuplicate(e);
+                                return handler.handleDuplicate(e);
                             }
                         } else {
                             throw RetryableException.wrap(e.getMessage(), e);
