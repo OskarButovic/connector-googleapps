@@ -1127,7 +1127,11 @@ public class GoogleAppsConnector implements Connector, CreateOp, DeleteOp, Schem
                     new RequestResultHandler<Directory.Schemas.List, Schemas, Boolean>() {
                         public Boolean handleResult(final Directory.Schemas.List request, Schemas schemas) {
                             //TODO rozparsovat
-                            for(com.google.api.services.admin.directory.model.Schema schemaGa : schemas.getSchemas()){
+                            List<com.google.api.services.admin.directory.model.Schema>schemasList = schemas.getSchemas();
+                            if(schemasList == null){
+                                return true;
+                            }
+                            for(com.google.api.services.admin.directory.model.Schema schemaGa : schemasList){
                                 //TODO ziskat schema name a pouzivat jako prefix
                                 String schemaName = schemaGa.getSchemaName();
                                 for(SchemaFieldSpec field : schemaGa.getFields()){
